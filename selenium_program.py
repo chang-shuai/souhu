@@ -16,12 +16,7 @@ class Sele():
     def open_url(self):
         url = "http://db.auto.sohu.com/%s/%s/dianping.html" % (self.ident, self.series_id)
         print(url)
-        r = requests.get("http://db.auto.sohu.com/yiqivw/5511/dianping.html", allow_redirects = False)
-        if 200 != r.status_code:
-            return False
-        else:
-            self.driver.get(url)
-            return True
+        self.driver.get(url)
     def get_tagA(self):
         koubei_box = self.driver.find_element_by_class_name("koubei-box")
         tab = koubei_box.find_element_by_class_name("tab")
@@ -69,14 +64,15 @@ class Sele():
         self.driver.close()
 def get_comms(ident,series_id, series_name):
     sele = Sele(ident,series_id,series_name)
-    flag = sele.open_url()
-    tagA = sele.get_tagA()
-    sele.click_a(tagA)
-    sele.close_driver()
-    if flag:
-        return sele.comms
-    else:
+    r = requests.get("http://db.auto.sohu.com/%s/%s/dianping.html"%(ident, series_id), allow_redirects = False)
+    if 200 != r.status_code:
         return None
+    else:
+        flag = sele.open_url()
+        tagA = sele.get_tagA()
+        sele.click_a(tagA)
+        sele.close_driver()
+        return sele.comms
 
 def main():
     wb = Workbook()
@@ -90,10 +86,10 @@ def main():
             series_name = series["n"]
             title = table_name+"-"+series_name
             comms = get_comms(ident, series_id, series_name)
-            if comms is not None:
-                save_excel(wb, title, comms)
-            else:
+            if comms is None:
                 continue
+            else:
+                save_excel(wb, title, comms)
     wb.save("souhu.xlsx")
 def save_excel(wb, title, comms):
     sheet = wb.create_sheet(title=title)
